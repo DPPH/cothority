@@ -11,15 +11,15 @@ func TestRules(t *testing.T) {
 	// one owner
 	owner := createIdentity()
 	rules := InitRules([]Identity{owner}, []Identity{})
-	expr, ok := rules[evolve]
-	require.True(t, ok)
+	expr := rules.GetEvolutionExpr()
+	require.NotNil(t, expr)
 	require.Equal(t, string(expr), owner.String())
 
 	// two owners
 	owners := []Identity{owner, createIdentity()}
 	rules = InitRules(owners, []Identity{})
-	expr, ok = rules[evolve]
-	require.True(t, ok)
+	expr = rules.GetEvolutionExpr()
+	require.NotNil(t, expr)
 	require.Equal(t, string(expr), owners[0].String()+" & "+owners[1].String())
 }
 
@@ -49,12 +49,16 @@ func TestDarc_Copy(t *testing.T) {
 	// the two darcs should be different
 	require.NotEqual(t, d1.Version, d2.Version)
 	require.NotEqual(t, d1.Description, d2.Description)
-	require.NotEqual(t, d1.Rules["ocs:write"], d2.Rules["ocs:write"])
+	require.NotEqual(t, d1.Rules.Get("ocs:write"), d2.Rules.Get("ocs:write"))
 
 	// ID should not change if values are the same
 	d2.Description = nil
 	d1 = d2.Copy()
 	require.Equal(t, d1.GetID(), d2.GetID())
+}
+
+func TestToProto(t *testing.T) {
+	// TODO
 }
 
 func TestAddRule(t *testing.T) {
@@ -98,7 +102,7 @@ func TestDarc_EvolveOne(t *testing.T) {
 	require.Nil(t, localEvolution(d1, d0, owner1))
 	require.Nil(t, d1.Verify(true))
 	// use logical-and in the evolve expression
-	// verification should if only one owner signs the darc
+	// verification should fail if only one owner signs the darc
 	require.Nil(t, d1.Rules.UpdateEvolution(expression.InitAndExpr(owner2.Identity().String(), owner1.Identity().String())))
 	require.Nil(t, localEvolution(d1, d0, owner2))
 	require.Nil(t, d1.Verify(true))
